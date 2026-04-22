@@ -2,7 +2,7 @@
 
 > A production-grade, full-stack navigation system built with Python, Flask, OSMnx, and Folium — comparable in architecture to Google Maps.
 
-> Live at: https://smart-route-finder-app.onrender.com/
+> Live at: https://smart-route-finder-app-r3xx.onrender.com/
 ---
 
 ## 📁 Project Structure
