@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{% block title %}SmartRoute AI{% endblock %}</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --bg-primary: #080c14;
+            --bg-secondary: #0d1420;
+            --bg-card: #111827;
+            --bg-card-hover: #151f2e;
+            --border: rgba(99, 179, 237, 0.12);
+            --border-glow: rgba(99, 179, 237, 0.35);
+            --accent-cyan: #38bdf8;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-purple: #8b5cf6;
+            --text-primary: #f0f6ff;
+            --text-secondary: #8ea3b8;
+            --text-muted: #4a6480;
+            --route-fast: #10b981;
+            --route-short: #3b82f6;
+            --route-opt: #f59e0b;
+            --glow-cyan: 0 0 30px rgba(56, 189, 248, 0.15);
+            --font-display: 'Playfair Display', serif;
+            --font-body: 'Space Grotesk', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        /* Light mode */
+        body.light-mode {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f1f5f9;
+            --border: rgba(99, 179, 237, 0.2);
+            --border-glow: rgba(99, 179, 237, 0.4);
+            --accent-cyan: #0284c7;
+            --accent-green: #059669;
+            --accent-orange: #d97706;
+            --accent-purple: #7c3aed;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --glow-cyan: 0 0 30px rgba(2, 132, 199, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+            transition: background-image 0.3s ease;
+        }
+
+        body.light-mode::before {
+            background-image:
+                linear-gradient(rgba(2, 132, 199, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(2, 132, 199, 0.08) 1px, transparent 1px);
+        }
+
+        /* Ambient glow */
+        body::after {
+            content: '';
+            position: fixed;
+            top: -200px; left: 50%;
+            transform: translateX(-50%);
+            width: 800px; height: 400px;
+            background: radial-gradient(ellipse, rgba(56,189,248,0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+            transition: background 0.3s ease;
+        }
+
+        body.light-mode::after {
+            background: radial-gradient(ellipse, rgba(2, 132, 199, 0.04) 0%, transparent 70%);
+        }
+        
+
+        /* ── Navbar ── */
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(8, 12, 20, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 0.5rem 0 2rem;
+            height: 64px;
+            display: flex; 
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.3s ease;
+        }
+
+        body.light-mode nav {
+            background: rgba(248, 250, 252, 0.85);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            text-decoration: none;
+            flex: 1;
+        }
+
+        .nav-brand-main {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .nav-logo {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+
+        .nav-title {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            letter-spacing: 0.5px;
+        }
+
+        .nav-title span {
+            color: var(--accent-cyan);
+        }
+
+        .nav-links {
+            display: flex; gap: 8px; list-style: none;
+            align-items: center;
+            margin-left: auto;
+            justify-content: flex-end;
+            margin-top: 2px;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            color: var(--accent-cyan);
+            border-color: var(--border-glow);
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 6px 14px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            letter-spacing: 0.3px;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-cyan);
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        .nav-badge {
+            font-size: 9px;
+            font-family: var(--font-mono);
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 2px 7px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* ── Main layout ── */
+        main {
+            position: relative; z-index: 1;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ── Alert ── */
+        .alert-error {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        /* ── Buttons ── */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), #0ea5e9);
+            color: #080c14;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 0.4px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.35);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            padding: 10px 22px;
+            border-radius: 10px;
+            font-family: var(--font-body);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--border-glow);
+            color: var(--accent-cyan);
+            background: rgba(56, 189, 248, 0.05);
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            border-color: var(--border-glow);
+            box-shadow: var(--glow-cyan);
+        }
+
+        /* ── Tag/Badge ── */
+        .tag {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        .tag-cyan {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .tag-green {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .tag-orange {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-orange);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .tag-purple {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--accent-purple);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        /* ── Input styles ── */
+        .form-input {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid var(--border);
+            color: #f8fbff;
+            padding: 13px 16px;
+            border-radius: 10px;
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+        }
+
+        .form-input::placeholder { color: #8fa4bd; }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            margin-top: 0;
+            font-size: 14px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        /* ── Mono text ── */
+        .mono { font-family: var(--font-mono); }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: rgba(56,189,248,0.2); border-radius: 3px; }
+
+        /* ── Loading overlay ── */
+        #loading-overlay {
+            display: none;
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(8,12,20,0.92);
+            backdrop-filter: blur(10px);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+        }
+
+        #loading-overlay.active { display: flex; }
+
+        .loader-ring {
+            width: 64px; height: 64px;
+            border: 3px solid rgba(56,189,248,0.1);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loader-text {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+
+        /* ── Footer ── */
+        footer {
+            position: relative; z-index: 1;
+            border-top: 1px solid var(--border);
+            padding: 20px 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading-overlay">
+    <div class="loader-ring"></div>
+    <div class="loader-text">Computing optimal routes...</div>
+    <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: -10px;">
+        Analyzing road network & traffic
+    </div>
+</div>
+
+<nav>
+    <div class="nav-brand">
+        <div class="nav-brand-main">
+            <div class="nav-logo"><i class="bi bi-map-fill"></i></div>
+            <span class="nav-title">Smart<span>Route</span> Finder</span>
+        </div>
+        <ul class="nav-links">
+            <li><button class="theme-toggle" id="themeToggle" title="Toggle theme"><i class="bi bi-moon-fill"></i></button></li>
+            <li><a href="/"><i class="bi bi-house"></i> Home</a></li>
+            {% if request.path != '/' %}
+            <li><a href="#" onclick="window.history.back()"><i class="bi bi-arrow-left"></i> Back</a></li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<footer>
+    SmartRoute AI &nbsp;·&nbsp; Powered by OSMnx + Folium &nbsp;·&nbsp; A* &amp; Dijkstra algorithms
+</footer>
+
+<script>
+function showLoading() {
+    document.getElementById('loading-overlay').classList.add('active');
+}
+function hideLoading() {
+    document.getElementById('loading-overlay').classList.remove('active');
+}
+// Always hide overlay on page load/show (handles back-button & error re-renders)
+window.addEventListener('DOMContentLoaded', hideLoading);
+window.addEventListener('pageshow', hideLoading);
+
+// Theme Toggle
+function initThemeToggle() {
+    const htmlElement = document.documentElement;
+    const themeToggle = document.getElementById('themeToggle');
+    
+    // Load saved theme preference or default to 'dark'
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    
+    // Apply saved theme on page load
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-mode');
+        themeToggle.innerHTML = '<i class="bi bi-sun-fill"></i>';
+    } else {
+        document.body.classList.remove('light-mode');
+        themeToggle.innerHTML = '<i class="bi bi-moon-fill"></i>';
+    }
+    
+    // Theme toggle click handler
+    themeToggle.addEventListener('click', () => {
+        const isLightMode = document.body.classList.toggle('light-mode');
+        const newTheme = isLightMode ? 'light' : 'dark';
+        localStorage.setItem('theme', newTheme);
+        
+        // Update icon
+        themeToggle.innerHTML = isLightMode 
+            ? '<i class="bi bi-sun-fill"></i>' 
+            : '<i class="bi bi-moon-fill"></i>';
+    });
+}
+
+// Initialize theme on page load
+window.addEventListener('DOMContentLoaded', initThemeToggle);
+</script>
+
+{% block extra_scripts %}{% endblock %}
+
+<footer>
+    Made By: Gaurav Gautam
+</footer>
+</body>
+</html>

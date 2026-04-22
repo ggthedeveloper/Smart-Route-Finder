@@ -1,0 +1,521 @@
+{% extends "base.html" %}
+{% block title %}Route Results — SmartRoute AI{% endblock %}
+
+{% block extra_head %}
+<style>
+    .results-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 2rem;
+    }
+
+    .results-header {
+        margin-bottom: 36px;
+    }
+
+    .route-path-display {
+        display: flex; align-items: center; gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+
+    .location-chip {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 6px 16px;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        display: flex; align-items: center; gap: 6px;
+        max-width: 280px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .route-arrow {
+        color: var(--accent-cyan);
+        font-size: 1.2rem;
+    }
+
+    /* Status bar */
+    .status-bar {
+        display: flex; align-items: center; gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 32px;
+    }
+
+    .status-pill {
+        display: flex; align-items: center; gap: 8px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 6px 14px;
+        font-size: 0.8rem;
+        font-family: var(--font-mono);
+    }
+
+    .status-dot {
+        width: 7px; height: 7px;
+        border-radius: 50%;
+    }
+
+    /* Main grid */
+    .results-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    @media (max-width: 900px) {
+        .results-grid { grid-template-columns: 1fr; }
+    }
+
+    .route-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        position: relative;
+        transition: all 0.3s;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .route-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+    }
+
+    .route-card.fastest::before { background: var(--route-fast); }
+    .route-card.shortest::before { background: var(--route-short); }
+    .route-card.optimal::before { background: var(--route-opt); }
+
+    .route-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+
+    .route-card.fastest:hover { border-color: rgba(16,185,129,0.4); }
+    .route-card.shortest:hover { border-color: rgba(59,130,246,0.4); }
+    .route-card.optimal:hover { border-color: rgba(245,158,11,0.4); }
+
+    .route-card.recommended {
+        border-color: rgba(245,158,11,0.35);
+        box-shadow: 0 0 30px rgba(245,158,11,0.08);
+    }
+
+    .recommended-badge {
+        position: absolute;
+        top: 16px; right: 16px;
+        background: rgba(245,158,11,0.15);
+        border: 1px solid rgba(245,158,11,0.3);
+        color: var(--accent-orange);
+        font-size: 10px;
+        font-family: var(--font-mono);
+        letter-spacing: 1px;
+        padding: 3px 9px;
+        border-radius: 20px;
+        text-transform: uppercase;
+    }
+
+    .route-type-icon {
+        font-size: 28px;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    .route-type-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: var(--text-primary);
+    }
+
+    .route-algo {
+        font-size: 0.75rem;
+        font-family: var(--font-mono);
+        margin-bottom: 20px;
+    }
+
+    .route-algo.fastest { color: var(--route-fast); }
+    .route-algo.shortest { color: var(--route-short); }
+    .route-algo.optimal { color: var(--route-opt); }
+
+    .metric-row {
+        display: flex; justify-content: space-between; align-items: baseline;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .metric-row:last-child { border-bottom: none; }
+
+    .metric-key {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        display: flex; align-items: center; gap: 6px;
+    }
+
+    .metric-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-family: var(--font-mono);
+    }
+
+    .metric-unit {
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: var(--text-muted);
+        margin-left: 3px;
+    }
+
+    /* Map preview panel */
+    .map-section {
+        margin-bottom: 24px;
+    }
+
+    .map-container {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        height: 500px;
+        position: relative;
+    }
+
+    .map-container iframe {
+        width: 100%; height: 100%;
+        border: none;
+    }
+
+    .map-open-btn {
+        position: absolute;
+        top: 14px; right: 14px;
+        background: rgba(8,12,20,0.85);
+        border: 1px solid var(--border-glow);
+        color: var(--accent-cyan);
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        text-decoration: none;
+        backdrop-filter: blur(8px);
+        transition: all 0.2s;
+    }
+
+    .map-open-btn:hover {
+        background: rgba(56,189,248,0.15);
+        color: var(--accent-cyan);
+    }
+
+    /* Fare breakdown */
+    .fare-section {
+        margin-bottom: 24px;
+    }
+
+    .fare-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    @media (max-width: 700px) {
+        .fare-grid { grid-template-columns: 1fr; }
+    }
+
+    .fare-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+    }
+
+    .fare-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+    }
+
+    .fare-amount {
+        font-size: 1.6rem;
+        font-weight: 700;
+        font-family: var(--font-mono);
+        color: var(--text-primary);
+    }
+
+    .fare-detail {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 6px;
+    }
+
+    /* Traffic + weather info */
+    .info-bar {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    @media (max-width: 600px) {
+        .info-bar { grid-template-columns: 1fr; }
+    }
+
+    .info-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex; align-items: center; gap: 14px;
+    }
+
+    .info-icon-wrap {
+        width: 48px; height: 48px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+
+    .info-title {
+        font-size: 0.75rem;
+        font-family: var(--font-mono);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .info-sub {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .section-heading {
+        font-size: 0.7rem;
+        font-family: var(--font-mono);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 14px;
+    }
+
+    /* Action buttons */
+    .action-bar {
+        display: flex; gap: 12px; flex-wrap: wrap;
+        margin-top: 8px;
+    }
+
+    .btn-action {
+        display: flex; align-items: center; gap: 8px;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 0.875rem;
+        font-family: var(--font-body);
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+    }
+
+    .btn-map {
+        background: rgba(56,189,248,0.1);
+        border: 1px solid rgba(56,189,248,0.25);
+        color: var(--accent-cyan);
+    }
+
+    .btn-map:hover {
+        background: rgba(56,189,248,0.2);
+        color: var(--accent-cyan);
+    }
+
+    .btn-back {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+    }
+
+    .btn-back:hover {
+        border-color: var(--border-glow);
+        color: var(--accent-cyan);
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .route-card { animation: fadeUp 0.4s ease forwards; }
+    .route-card:nth-child(1) { animation-delay: 0s; }
+    .route-card:nth-child(2) { animation-delay: 0.1s; }
+    .route-card:nth-child(3) { animation-delay: 0.2s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="results-container">
+
+    <!-- Header -->
+    <div class="results-header">
+        <div class="route-path-display">
+            <div class="location-chip">
+                <i class="bi bi-circle-fill" style="color: var(--accent-green); font-size: 8px;"></i>
+                {{ origin }}
+            </div>
+            <span class="route-arrow">→</span>
+            <div class="location-chip">
+                <i class="bi bi-geo-fill" style="color: #f87171;"></i>
+                {{ destination }}
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-pill">
+                <div class="status-dot" style="background: var(--accent-green);"></div>
+                {{ result.routes|length }} routes computed
+            </div>
+            <div class="status-pill">
+                <div class="status-dot" style="background: {{ result.traffic.color }};"></div>
+                {{ result.traffic.description }}
+            </div>
+            <div class="status-pill">
+                <span>{{ result.weather.label }}</span>
+            </div>
+            <div class="action-bar">
+                <a href="{{ result.map_url }}" target="_blank" class="btn-action btn-map">
+                    <i class="bi bi-map-fill"></i> Open Full Map
+                </a>
+                <a href="/" class="btn-action btn-back">
+                    <i class="bi bi-arrow-left"></i> New Route
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Route cards -->
+    <div class="section-heading"><i class="bi bi-bar-chart-line-fill"></i> Route Comparison</div>
+    <div class="results-grid">
+        {% for route in result.routes %}
+        <div class="route-card {{ route.route_type }}
+            {% if route.label == result.recommended %}recommended{% endif %}">
+
+            {% if route.label == result.recommended %}
+            <div class="recommended-badge">⭐ Recommended</div>
+            {% endif %}
+
+            <span class="route-type-icon">
+                {% if route.route_type == 'fastest' %}⚡{% elif route.route_type == 'shortest' %}📏{% else %}🏆{% endif %}
+            </span>
+
+            <div class="route-type-name">{{ route.route_type|capitalize }} Route</div>
+            <div class="route-algo {{ route.route_type }}">
+                {% if route.route_type == 'fastest' %}A* · Travel Time Weight
+                {% elif route.route_type == 'shortest' %}Dijkstra · Distance Weight
+                {% else %}A* · Balanced Weight
+                {% endif %}
+            </div>
+
+            <div class="metric-row">
+                <span class="metric-key"><i class="bi bi-signpost-split-fill"></i> Distance</span>
+                <span class="metric-value">{{ route.distance_km }}<span class="metric-unit">km</span></span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-key"><i class="bi bi-stopwatch-fill"></i> ETA</span>
+                <span class="metric-value">{{ route.time_min }}<span class="metric-unit">min</span></span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-key"><i class="bi bi-cash-coin"></i> Est. Fare</span>
+                <span class="metric-value">₹{{ route.fare_total }}</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-key"><i class="bi bi-diagram-3-fill"></i> Road Nodes</span>
+                <span class="metric-value">{{ route.node_count }}<span class="metric-unit"> pts</span></span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Traffic & Weather info -->
+    <div class="info-bar">
+        <div class="info-card">
+            <div class="info-icon-wrap" style="background: rgba({{ '239,68,68' if result.traffic.level == 'Severe' else '245,158,11' if result.traffic.level == 'Heavy' else '251,146,60' if result.traffic.level == 'Moderate' else '16,185,129' }},0.12)">
+                <i class="bi bi-sign-stoplights-fill"></i>
+            </div>
+            <div>
+                <div class="info-title">Traffic Conditions</div>
+                <div class="info-value" style="color: {{ result.traffic.color }}">{{ result.traffic.level }}</div>
+                <div class="info-sub">×{{ result.traffic.multiplier }} delay factor · {{ result.traffic.source }}</div>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-icon-wrap" style="background: rgba(56,189,248,0.1)">
+                {{ result.weather.label[:2] }}
+            </div>
+            <div>
+                <div class="info-title">Weather Impact</div>
+                <div class="info-value" style="color: {{ result.weather.color }}">{{ result.weather.label[2:] }}</div>
+                <div class="info-sub">Speed factor: {{ result.weather.speed_factor }}x of normal</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fare breakdown -->
+    {% if result.routes %}
+    {% set rec = result.routes[0] %}
+    {% for r in result.routes %}
+        {% if r.label == result.recommended %}{% set rec = r %}{% endif %}
+    {% endfor %}
+    <div class="fare-section">
+        <div class="section-heading"><i class="bi bi-credit-card-2-front-fill"></i> Fare Breakdown ({{ result.recommended }} Route) • {{ rec.fare_breakdown.vehicle_name }}</div>
+        <div class="fare-grid">
+            <div class="fare-card">
+                <div class="fare-label">Base Fare</div>
+                <div class="fare-amount" style="color: var(--accent-cyan)">₹{{ rec.fare_breakdown.base_fare }}</div>
+                <div class="fare-detail">Flat pickup charge</div>
+            </div>
+            <div class="fare-card">
+                <div class="fare-label">Distance + Time</div>
+                <div class="fare-amount" style="color: var(--accent-green)">₹{{ (rec.fare_breakdown.distance_charge + rec.fare_breakdown.time_charge)|round(2) }}</div>
+                <div class="fare-detail">₹{{ rec.fare_breakdown.distance_charge }} dist + ₹{{ rec.fare_breakdown.time_charge }} time</div>
+            </div>
+            <div class="fare-card">
+                <div class="fare-label">Total (incl. surge)</div>
+                <div class="fare-amount" style="color: var(--accent-orange)">₹{{ rec.fare_breakdown.total }}</div>
+                <div class="fare-detail">
+                    {% if rec.fare_breakdown.surge_multiplier > 1 %}
+                    <i class="bi bi-lightning-charge-fill"></i> Surge ×{{ rec.fare_breakdown.surge_multiplier }}
+                    {% else %}
+                    No surge pricing
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Embedded map -->
+    <div class="map-section">
+        <div class="section-heading"><i class="bi bi-map-fill"></i> Interactive Map</div>
+        <div class="map-container">
+            <iframe src="{{ result.map_url }}" title="Route Map"></iframe>
+            <a href="{{ result.map_url }}" target="_blank" class="map-open-btn">
+                <i class="bi bi-arrows-fullscreen"></i> Fullscreen
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

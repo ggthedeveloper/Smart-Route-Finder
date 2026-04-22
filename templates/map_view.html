@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Map View — SmartRoute AI{% endblock %}
+
+{% block extra_head %}
+<style>
+    .map-full-page {
+        height: calc(100vh - 64px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .map-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 20px;
+        background: rgba(8,12,20,0.9);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+        backdrop-filter: blur(10px);
+    }
+
+    .map-toolbar a {
+        display: flex; align-items: center; gap: 6px;
+        padding: 7px 14px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-family: var(--font-body);
+    }
+
+    .btn-back-map {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+    }
+
+    .btn-back-map:hover {
+        border-color: var(--border-glow);
+        color: var(--accent-cyan);
+    }
+
+    .map-title {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-family: var(--font-mono);
+    }
+
+    .map-full-iframe {
+        flex: 1;
+        border: none;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="map-full-page">
+    <div class="map-toolbar">
+        <a href="javascript:history.back()" class="btn-back-map">
+            <i class="bi bi-arrow-left"></i> Back to Results
+        </a>
+        <a href="/" class="btn-back-map">
+            <i class="bi bi-house"></i> Home
+        </a>
+        <span class="map-title"><i class="bi bi-map-fill"></i> Interactive Route Map · Session {{ session_id }}</span>
+    </div>
+    <iframe
+        src="{{ map_url }}"
+        class="map-full-iframe"
+        title="Full Screen Route Map"
+        allowfullscreen>
+    </iframe>
+</div>
+{% endblock %}
