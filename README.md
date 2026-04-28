@@ -22,8 +22,7 @@ smart_route_optimizer/
 │   ├── helpers.py              # Geocoding, fare calc, weather, history
 │   └── map_renderer.py         # Folium multi-route map builder
 │
-├── api/
-│   └── traffic.py              # OpenRouteService + synthetic traffic
+├── api/                        # OpenStreetMap, # OpenRouteService
 │
 ├── templates/
 │   ├── base.html               # Shared nav, fonts, styles
