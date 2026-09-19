@@ -147,7 +147,7 @@ def compute_path_metrics(G, path, traffic_multiplier=1.0):
     total_time_min = (total_km / avg_speed_kmh) * 60.0
 
     return {
-        "distance_km": round(total_km, 2),
-        "time_min": round(total_time_min, 1),
+        "distance_km": round(total_km, ),
+        "time_min": round(total_time_min, ),
         "coords": coords,
     }
